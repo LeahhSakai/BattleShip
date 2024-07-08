@@ -92,14 +92,14 @@ class BattleShipClient:
             if not self.ships_to_place:
                 self.placing_ships = False
                 self.send_positions_to_server()
-            # Actualiza las opciones del menú de barcos después de confirmar la colocación
+   
             self.update_ship_menu_options()
 
 
     def set_current_ship(self, value):
         self.current_ship = value
         self.current_ship_length = self.ships_to_place[self.current_ship]
-        # Inicializa las posiciones del barco actual a una lista vacía
+        
         self.ship_positions[self.current_ship] = []
 
     def on_board_click(self, x, y):
@@ -108,35 +108,33 @@ class BattleShipClient:
                 if y + self.current_ship_length <= 10 and all(self.buttons[x][y + i]['bg'] != 'blue' for i in range(self.current_ship_length)):
                     for i in range(self.current_ship_length):
                         self.buttons[x][y + i].config(bg="blue")
-                    # Añade las posiciones del barco a self.ship_positions
+                    
                     self.ship_positions[self.current_ship].extend([(x, y + i) for i in range(self.current_ship_length)])
             else:
                 if x + self.current_ship_length <= 10 and all(self.buttons[x + i][y]['bg'] != 'blue' for i in range(self.current_ship_length)):
                     for i in range(self.current_ship_length):
                         self.buttons[x + i][y].config(bg="blue")
-                    # Añade las posiciones del barco a self.ship_positions
+                    
                     self.ship_positions[self.current_ship].extend([(x + i, y) for i in range(self.current_ship_length)])
 
 
     def update_ship_menu_options(self):
-        # Obtiene las opciones actuales del menú
+       
         menu = self.ship_menu['menu']
         menu.delete(0, 'end')
-        # Añade los barcos restantes a las opciones del menú
+        
         for ship in self.ships_to_place.keys():
             menu.add_command(label=ship, command=tk._setit(self.ship_var, ship, self.set_current_ship))
 
     def remove_ship(self):
         ship = self.ship_var.get()
         if ship in self.ship_positions:
-            # Elimina el barco del tablero
+           
             for x, y in self.ship_positions[ship]:
                 self.buttons[x][y].config(bg="white")
-            # Elimina el barco de los barcos colocados
+            
             self.ship_positions.pop(ship)
-            # Añade el barco de nuevo a los barcos por colocar
-            self.ships_to_place[ship] = len(self.ship_positions[ship])
-            # Actualiza las opciones del menú de barcos
+            self.ships_to_place[ship] = len(self.ship_positions[ship]
             self.update_ship_menu_options()
         else:
             tk.messagebox.showwarning("Advertencia", "Por favor, selecciona un barco para eliminar.")
