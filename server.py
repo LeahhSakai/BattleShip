@@ -55,7 +55,7 @@ class BattleShipServer:
             client.send(f"START_GAME {self.clients[self.players[1-i]]} {'YOUR_TURN' if i == 0 else 'OPPONENT_TURN'}".encode('utf-8'))
 
     def handle_ship_positions(self, client_socket, message):
-        # Procesar la posición de los barcos
+        
         pass
 
     def handle_attack(self, client_socket, message):
@@ -63,7 +63,6 @@ class BattleShipServer:
         x, y = int(x), int(y)
         opponent = self.players[1 - self.players.index(client_socket)]
         opponent.send(f"ATTACK_NOTIFICATION {x} {y}".encode('utf-8'))
-        # Aquí se debería determinar si fue un HIT o MISS y notificar a ambos jugadores
         result = "HIT" if (x + y) % 2 == 0 else "MISS"
         client_socket.send(f"ATTACK_RESULT {x} {y} {result}".encode('utf-8'))
         self.turn = 1 - self.turn
