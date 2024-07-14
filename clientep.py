@@ -14,7 +14,6 @@ class BattleShipClient:
         self.client_socket.connect((self.host, self.port))
 
         self.username = tk.StringVar()
-        self.password = tk.StringVar()
         self.opponent = None
         self.turn = None
 
@@ -28,18 +27,13 @@ class BattleShipClient:
         self.setup_gui()
         self.receive_thread = threading.Thread(target=self.receive_messages)
         self.receive_thread.start()
-        self.username_label = tk.Label(self.info_frame, textvariable=self.username)
-        self.username_label.pack()
-
 
     def setup_gui(self):
-        self.login_frame = tk.Frame(self.root)
-        tk.Label(self.login_frame, text="Username:").grid(row=0, column=0)
-        tk.Entry(self.login_frame, textvariable=self.username).grid(row=0, column=1)
-        tk.Label(self.login_frame, text="Password:").grid(row=1, column=0)
-        tk.Entry(self.login_frame, textvariable=self.password, show="*").grid(row=1, column=1)
-        tk.Button(self.login_frame, text="Login", command=self.login).grid(row=2, columnspan=2)
-        self.login_frame.pack()
+        self.username_frame = tk.Frame(self.root)
+        tk.Label(self.username_frame, text="Nombre de usuario:").grid(row=0, column=0)
+        tk.Entry(self.username_frame, textvariable=self.username).grid(row=0, column=1)
+        tk.Button(self.username_frame, text="Ingresar", command=self.send_username).grid(row=1, columnspan=2)
+        self.username_frame.pack()
 
         self.main_frame = tk.Frame(self.root)
         self.board_frame = tk.Frame(self.main_frame)
@@ -61,119 +55,27 @@ class BattleShipClient:
         self.ship_frame = tk.Frame(self.root)
         self.ship_var = tk.StringVar()
         self.ship_var.set("Select Ship")
-        self.ship_menu = tk.OptionMenu(self.ship_frame, self.ship_var, *self.ships_to_place.keys(), command=self.highlight_ship)
+        self.ship_menu = tk.OptionMenu(self.ship_frame, self.ship_var, *self.ships_to_place.keys(), command=self.set_current_ship)
         self.ship_menu.pack(side=tk.LEFT)
         self.rotate_button = tk.Button(self.ship_frame, text="Rotate", command=self.rotate_ship)
         self.rotate_button.pack(side=tk.LEFT)
         self.confirm_button = tk.Button(self.ship_frame, text="Confirm Placement", command=self.confirm_placement)
         self.confirm_button.pack(side=tk.LEFT)
-        # Añade un botón para eliminar un barco
-        self.remove_button = tk.Button(self.ship_frame, text="Eliminar barco", command=self.remove_ship)
-        self.remove_button.pack(side=tk.LEFT)
         self.ship_frame.pack()
-            
-    def highlight_ship(self, value):
-        ship = value
-        if ship in self.ship_positions:
-            # Resalta el barco en el tablero
-            for x, y in self.ship_positions[ship]:
-                self.buttons[x][y].config(bg="yellow")
 
-    def confirm_placement(self):
-        ship = self.ship_var.get()
-        if not ship or ship not in self.ships_to_place:
-            tk.messagebox.showwarning("Advertencia", "Por favor, selecciona un barco para colocar.")
-            return
-        if ship in self.ship_positions:
-            self.ships_to_place.pop(ship)
-            self.current_ship = None
-            self.current_ship_length = 0
-            self.ship_var.set("Select Ship")
-            if not self.ships_to_place:
-                self.placing_ships = False
-                self.send_positions_to_server()
-   
-            self.update_ship_menu_options()
-
-
-    def set_current_ship(self, value):
-        self.current_ship = value
-        self.current_ship_length = self.ships_to_place[self.current_ship]
-        
-        self.ship_positions[self.current_ship] = []
-
-    def on_board_click(self, x, y):
-        if self.placing_ships and self.current_ship:
-            if self.horizontal:
-                if y + self.current_ship_length <= 10 and all(self.buttons[x][y + i]['bg'] != 'blue' for i in range(self.current_ship_length)):
-                    for i in range(self.current_ship_length):
-                        self.buttons[x][y + i].config(bg="blue")
-                    
-                    self.ship_positions[self.current_ship].extend([(x, y + i) for i in range(self.current_ship_length)])
-            else:
-                if x + self.current_ship_length <= 10 and all(self.buttons[x + i][y]['bg'] != 'blue' for i in range(self.current_ship_length)):
-                    for i in range(self.current_ship_length):
-                        self.buttons[x + i][y].config(bg="blue")
-                    
-                    self.ship_positions[self.current_ship].extend([(x + i, y) for i in range(self.current_ship_length)])
-
-
-    def update_ship_menu_options(self):
-       
-        menu = self.ship_menu['menu']
-        menu.delete(0, 'end')
-        
-        for ship in self.ships_to_place.keys():
-            menu.add_command(label=ship, command=tk._setit(self.ship_var, ship, self.set_current_ship))
-
-    def remove_ship(self):
-        ship = self.ship_var.get()
-        if ship in self.ship_positions:
-           
-            for x, y in self.ship_positions[ship]:
-                self.buttons[x][y].config(bg="white")
-            
-            self.ship_positions.pop(ship)
-            self.ships_to_place[ship] = len(self.ship_positions[ship]
-            self.update_ship_menu_options()
-        else:
-            tk.messagebox.showwarning("Advertencia", "Por favor, selecciona un barco para eliminar.")
-
-
-    def on_board_click(self, x, y):
-        if self.placing_ships and self.current_ship:
-            if self.horizontal:
-                if y + self.current_ship_length <= 10 and all(self.buttons[x][y + i]['bg'] != 'blue' for i in range(self.current_ship_length)):
-                    for i in range(self.current_ship_length):
-                        self.buttons[x][y + i].config(bg="blue")
-                    self.ship_positions[self.current_ship] = [(x, y + i) for i in range(self.current_ship_length)]
-            else:
-                if x + self.current_ship_length <= 10 and all(self.buttons[x + i][y]['bg'] != 'blue' for i in range(self.current_ship_length)):
-                    for i in range(self.current_ship_length):
-                        self.buttons[x + i][y].config(bg="blue")
-                    self.ship_positions[self.current_ship] = [(x + i, y) for i in range(self.current_ship_length)]
-
-
-
-    def rotate_ship(self):
-        self.horizontal = not self.horizontal
-
-
-    def send_positions_to_server(self):
-        positions = "SHIP_POSITIONS " + " ".join([f"{ship} {' '.join([f'{x},{y}' for x, y in positions])}" for ship, positions in self.ship_positions.items()])
-        self.client_socket.send(positions.encode('utf-8'))
-
-    def login(self):
-        self.client_socket.send(f"LOGIN {self.username.get()} {self.password.get()}".encode('utf-8'))
+    def send_username(self):
+        self.client_socket.send(f"USERNAME {self.username.get()}".encode('utf-8'))
 
     def receive_messages(self):
         while True:
             try:
                 message = self.client_socket.recv(1024).decode('utf-8')
-                if message.startswith("LOGIN_SUCCESS"):
-                    self.login_frame.pack_forget()
+                if message.startswith("USERNAME_SUCCESS"):
+                    self.username_frame.pack_forget()
                     self.main_frame.pack()
                     self.ship_frame.pack()
+                elif message.startswith("USERNAME_TAKEN"):
+                    tk.messagebox.showerror("Error", "Nombre de usuario ya tomado. Por favor, elija otro.")
                 elif message.startswith("START_GAME"):
                     _, self.opponent, self.turn = message.split()
                     self.update_turn_label()
@@ -194,14 +96,68 @@ class BattleShipClient:
 
     def update_turn_label(self):
         self.turn_label.config(text=f"Turn: {self.turn}")
-        
-    def attack(self, x, y):
-        self.client_socket.send(f"ATTACK {x} {y}".encode('utf-8'))
 
+    def set_current_ship(self, value):
+        if value in self.ship_positions:
+            tk.messagebox.showwarning("Advertencia", "Este barco ya ha sido colocado.")
+            self.ship_var.set("Select Ship")
+        else:
+            self.current_ship = value
+            self.current_ship_length = self.ships_to_place[self.current_ship]
+
+    def on_board_click(self, x, y):
+        if self.placing_ships and self.current_ship:
+            if self.current_ship in self.ship_positions:
+                tk.messagebox.showwarning("Advertencia", "Este barco ya ha sido colocado.")
+                self.current_ship = None
+                self.ship_var.set("Select Ship")
+                return
+
+            if self.horizontal:
+                if y + self.current_ship_length <= 10 and all(self.buttons[x][y + i]['bg'] != 'blue' for i in range(self.current_ship_length)):
+                    for i in range(self.current_ship_length):
+                        self.buttons[x][y + i].config(bg="blue")
+                    self.ship_positions[self.current_ship] = [(x, y + i) for i in range(self.current_ship_length)]
+            else:
+                if x + self.current_ship_length <= 10 and all(self.buttons[x + i][y]['bg'] != 'blue' for i in range(self.current_ship_length)):
+                    for i in range(self.current_ship_length):
+                        self.buttons[x + i][y].config(bg="blue")
+                    self.ship_positions[self.current_ship] = [(x + i, y) for i in range(self.current_ship_length)]
+
+    def confirm_placement(self):
+        ship = self.ship_var.get()
+        if not ship or ship not in self.ships_to_place:
+            tk.messagebox.showwarning("Advertencia", "Por favor, selecciona un barco para colocar.")
+            return
+        if ship in self.ship_positions:
+            tk.messagebox.showwarning("Advertencia", "Este barco ya ha sido colocado.")
+            return
+
+        self.current_ship = None
+        self.current_ship_length = 0
+        self.ship_var.set("Select Ship")
+
+        if len(self.ship_positions) == len(self.ships_to_place):
+            self.placing_ships = False
+            self.send_positions_to_server()
+        self.update_ship_menu_options()
+
+    def update_ship_menu_options(self):
+        menu = self.ship_menu['menu']
+        menu.delete(0, 'end')
+        for ship in self.ships_to_place.keys():
+            menu.add_command(label=ship, command=tk._setit(self.ship_var, ship, self.set_current_ship))
+
+    def rotate_ship(self):
+        self.horizontal = not self.horizontal
+
+    def send_positions_to_server(self):
+        positions = "SHIP_POSITIONS " + " ".join([f"{ship} {' '.join([f'{x},{y}' for x, y in positions])}" for ship, positions in self.ship_positions.items()])
+        self.client_socket.send(positions.encode('utf-8'))
 
     def run(self):
         self.root.mainloop()
 
-if __name__ == "__main__":
-    client = BattleShipClient("127.0.0.1", 5000)
+if __name__== "__main__":
+    client = BattleShipClient("127.0.0.1", 12346)
     client.run()
